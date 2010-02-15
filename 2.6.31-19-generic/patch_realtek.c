@@ -164,6 +164,7 @@ enum {
 	ALC861VD_LENOVO,
 	ALC861VD_DALLAS,
 	ALC861VD_HP,
+	ALC861VD_HP2,
 	ALC861VD_AUTO,
 	ALC861VD_MODEL_LAST,
 };
@@ -14905,6 +14906,32 @@ static struct snd_kcontrol_new alc861vd_hp_mixer[] = {
 	{ } /* end */
 };
 
+/* Pin assignment: Speaker=, Line-out = ,
+ *                 Front Mic=, ATAPI Mic = ,
+ */
+static struct snd_kcontrol_new alc861vd_hp2_mixer[] = {
+    HDA_CODEC_VOLUME("Front Playback Volume", 0x02, 0x0, HDA_OUTPUT),
+    HDA_BIND_MUTE("Front Playback Switch", 0x0c, 2, HDA_INPUT),
+
+    HDA_CODEC_MUTE("Headphone Playback Switch", 0x1b, 0x0, HDA_OUTPUT),
+
+    HDA_CODEC_VOLUME("Mic Boost", 0x18, 0, HDA_INPUT),
+    HDA_CODEC_VOLUME("Mic Playback Volume", 0x0b, 0x0, HDA_INPUT),
+    HDA_CODEC_MUTE("Mic Playback Switch", 0x0b, 0x0, HDA_INPUT),
+
+    HDA_CODEC_VOLUME("Front Mic Boost", 0x19, 0, HDA_INPUT),
+    HDA_CODEC_VOLUME("Front Mic Playback Volume", 0x0b, 0x1, HDA_INPUT),
+    HDA_CODEC_MUTE("Front Mic Playback Switch", 0x0b, 0x1, HDA_INPUT),
+
+    HDA_CODEC_VOLUME("Line Playback Volume", 0x0b, 0x02, HDA_INPUT),
+    HDA_CODEC_MUTE("Line Playback Switch", 0x0b, 0x02, HDA_INPUT),
+
+    HDA_CODEC_VOLUME("CD Playback Volume", 0x0b, 0x04, HDA_INPUT),
+    HDA_CODEC_MUTE("CD Playback Switch", 0x0b, 0x04, HDA_INPUT),
+
+    { } /* end */
+};
+
 /*
  * generic initialization of ADC, input mixers and output mixers
  */
@@ -15163,12 +15190,14 @@ static const char *alc861vd_models[ALC861VD_MODEL_LAST] = {
 	[ALC861VD_LENOVO]	= "lenovo",
 	[ALC861VD_DALLAS]	= "dallas",
 	[ALC861VD_HP]		= "hp",
+	[ALC861VD_HP2]		= "hp2",
 	[ALC861VD_AUTO]		= "auto",
 };
 
 static struct snd_pci_quirk alc861vd_cfg_tbl[] = {
 	SND_PCI_QUIRK(0x1019, 0xa88d, "Realtek ALC660 demo", ALC660VD_3ST),
 	SND_PCI_QUIRK(0x103c, 0x30bf, "HP TX1000", ALC861VD_HP),
+	SND_PCI_QUIRK(0x103c, 0x30e5, "HP TX2000", ALC861VD_HP2),
 	SND_PCI_QUIRK(0x1043, 0x12e2, "Asus z35m", ALC660VD_3ST),
 	SND_PCI_QUIRK(0x1043, 0x1339, "Asus G1", ALC660VD_3ST),
 	SND_PCI_QUIRK(0x1043, 0x1633, "Asus V1Sn", ALC660VD_ASUS_V1S),
@@ -15275,6 +15304,33 @@ static struct alc_config_preset alc861vd_presets[] = {
 		.input_mux = &alc861vd_hp_capture_source,
 		.unsol_event = alc_automute_amp_unsol_event,
 		.init_hook = alc861vd_dallas_init_hook,
+	},
+	[ALC861VD_HP2] = {
+        .mixers = { alc861vd_hp2_mixer },           //copied from alc861vd_3st_mixer
+                                                    //may need purge
+        .init_verbs = { alc861vd_volume_init_verbs,     // no idea, purge
+                 alc861vd_3stack_init_verbs },          // ditto
+        .num_dacs = ARRAY_SIZE(alc861vd_dac_nids),      // no idea, but seems logical
+        .dac_nids = alc861vd_dac_nids,                  // ditto
+        .dig_out_nid = ALC861VD_DIGOUT_NID,             // what is it?
+        .num_channel_mode = ARRAY_SIZE(alc861vd_3stack_2ch_modes),
+        .channel_mode = alc861vd_3stack_2ch_modes,
+        .input_mux = &alc861vd_hp_capture_source,
+        .unsol_event = alc_automute_amp_unsol_event,
+        .init_hook = alc861vd_dallas_init_hook,
+
+//      .mixers = { alc861vd_hp_mixer },
+//      .init_verbs = { alc861vd_dallas_verbs, alc861vd_eapd_verbs },
+
+/*      TODO:
+ *          - Purgar y ajustar bien los pines (.mixer y .init_verbs)
+ *          - Comprobar si es util y sino borrar: .num_dacs y .dac_nids
+ *          - Comprobar si es util y sino borrar: .dig_out_nid
+ *          - Comprobar que el automute se ha arreglado, puede q haya q añadir alguna
+ *             constante: .input_mux, unsol_event, .init_hook.
+ *          - Jugar con el detector de la conexion minijack (printk's)
+ *          - Es correcto llamarlo hp2?
+ */
 	},
 	[ALC660VD_ASUS_V1S] = {
 		.mixers = { alc861vd_lenovo_mixer },
